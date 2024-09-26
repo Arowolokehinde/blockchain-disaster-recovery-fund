@@ -1,0 +1,30 @@
+[project]
+name = "blockchain-relief-fund"
+authors = []
+description = ""
+telemetry = true
+requirements = []
+[contracts.disaster-relief]
+path = "contracts/disaster-relief.clar"
+depends_on = []
+
+[contracts.governance]
+path = "contracts/governance.clar"
+depends_on = []
+
+[contracts.utils]
+path = "contracts/utils.clar"
+depends_on = []
+
+[repl]
+costs_version = 2
+parser_version = 2
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
