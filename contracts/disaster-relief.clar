@@ -81,3 +81,85 @@
   )
 )
 
+
+;; =========================================
+;; ADMIN FUNCTIONS
+;; =========================================
+
+;; Function to set a new admin (only current admin can call)
+(define-public (set-admin (new-admin principal))
+  (if (is-eq tx-sender (var-get admin))
+    (begin
+      (var-set admin new-admin)
+      (print {event: "admin-changed", new-admin: new-admin})
+      (ok new-admin)
+    )
+    (err u103) ;; Error: Unauthorized
+  )
+)
+
+;; Function to update donation limits (only admin can call)
+(define-public (set-donation-limits (new-min uint) (new-max uint))
+  (if (and (is-eq tx-sender (var-get admin)) (< new-min new-max))
+    (begin
+      (var-set min-donation new-min)
+      (var-set max-donation new-max)
+      (print {event: "donation-limits-updated", min: new-min, max: new-max})
+      (ok true)
+    )
+    (err u104) ;; Error: Unauthorized or invalid limits
+  )
+)
+
+;; Function to pause/unpause the contract (only admin can call)
+(define-public (set-paused (new-paused-state bool))
+  (if (is-eq tx-sender (var-get admin))
+    (begin
+      (var-set paused new-paused-state)
+      (print {event: "contract-pause-changed", paused: new-paused-state})
+      (ok new-paused-state)
+    )
+    (err u105) ;; Error: Unauthorized
+  )
+)
+
+;; Function to update recipient allocation (only admin can call)
+(define-public (update-recipient-allocation (recipient principal) (new-allocation uint))
+  (if (and (is-eq tx-sender (var-get admin)) (is-some (map-get? recipients recipient)))
+    (begin
+      (map-set recipients recipient new-allocation)
+      (print {event: "recipient-allocation-updated", recipient: recipient, new-allocation: new-allocation})
+      (ok new-allocation)
+    )
+    (err u106) ;; Error: Unauthorized or recipient not found
+  )
+)
+
+
+
+
+;; =========================================
+;; READ-ONLY FUNCTIONS
+;; =========================================
+
+;; Function to get the contract's total balance
+(define-read-only (get-total-funds)
+  (ok (var-get total-funds))
+)
+
+;; Function to check if the contract is paused
+(define-read-only (is-paused)
+  (ok (var-get paused))
+)
+
+;; Function to get recipient's allocation
+(define-read-only (get-recipient-allocation (recipient principal))
+  (ok (default-to u0 (map-get? recipients recipient)))
+)
+
+
+
+;; Function to get the current admin
+(define-read-only (get-admin)
+  (ok (var-get admin))
+)
