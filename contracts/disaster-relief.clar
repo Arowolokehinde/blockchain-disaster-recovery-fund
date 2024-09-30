@@ -26,6 +26,17 @@
 (define-map recipients principal uint)
 (define-map last-withdrawal principal uint)
 
+;; private functions
+(define-private (distribute-to-recipient (recipient-data {recipient: principal, allocation: uint}))
+  (let ((recipient (get recipient recipient-data))
+        (allocation (get allocation recipient-data)))
+    (try! (as-contract (stx-transfer? allocation tx-sender recipient)))
+    (print {event: "funds-sent", recipient: recipient, amount: allocation})
+    (ok true)
+  )
+)
+
+
 ;; public functions
 ;;
 (define-public (donate (amount uint))
@@ -156,6 +167,24 @@
   )
 )
 
+(define-public (emergency-shutdown)
+  (if (is-eq tx-sender (var-get admin))
+    (begin
+      (var-set paused true)
+      (print {event: "emergency-shutdown", admin: tx-sender})
+      (ok true)
+    )
+    (err u105) ;; Error: Unauthorized
+  )
+)
+
+(define-public (log-audit (action-type (string-ascii 32)) (actor principal))
+  (let ((current-time (unwrap-panic (get-block-info? time u0))))
+    (ok true)
+  )
+)
+
+
 (define-read-only (get-donation (user principal))
   (default-to u0 (map-get? donations user))
 )
@@ -180,3 +209,5 @@
   ;; Return donation and withdrawal records for a user
   (ok (tuple (donations (map-get? donations user)) (withdrawals (map-get? last-withdrawal user))))
 )
+
+
