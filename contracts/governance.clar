@@ -91,11 +91,6 @@
   )
 )
 
-;; Multi-Signature Wallet Implementation
-
-;; Define admin
-;; (define-data-var admin principal tx-sender)
-
 ;; Map to store signers
 (define-map signers principal bool)
 
