@@ -30,7 +30,7 @@
 (define-private (distribute-to-recipient (recipient-data {recipient: principal, allocation: uint}))
   (let ((recipient (get recipient recipient-data))
         (allocation (get allocation recipient-data)))
-    (try! (as-contract (stx-transfer? allocation tx-sender recipient)))
+    (try! (stx-transfer? allocation tx-sender recipient))
     (print {event: "funds-sent", recipient: recipient, amount: allocation})
     (ok true)
   )
@@ -70,7 +70,7 @@
   (let (
     (recipient-allocation (default-to u0 (map-get? recipients tx-sender)))
     (last-withdrawal-time (default-to u0 (map-get? last-withdrawal tx-sender)))
-    (current-time (unwrap-panic (get-block-info? time u0)))
+    (current-time stacks-block-time)
   )
     (if (and (not (var-get paused))
              (> recipient-allocation u0)
@@ -81,7 +81,7 @@
         (var-set total-funds (- (var-get total-funds) amount))
         (map-set last-withdrawal tx-sender current-time)
         (print {event: "withdrawal", recipient: tx-sender, amount: amount})
-        (as-contract (stx-transfer? amount tx-sender 'ST000000000000000000002AMW42H))
+        (stx-transfer? amount tx-sender tx-sender)
       )
       (err u102) ;; Error: Invalid withdrawal or cooldown period not met
     )
@@ -154,13 +154,13 @@
 
 (define-public (request-refund (amount uint))
   (let ((donation (get-donation tx-sender))
-        (current-time (unwrap-panic (get-block-info? time u0))))
-    (if (and (<= amount donation) 
-             (>= (- current-time (unwrap-panic (get-block-info? time u0))) withdrawal-cooldown)) ;; Refund within 24 hours
+        (current-time stacks-block-time))
+    (if (and (<= amount donation)
+             (>= (- current-time stacks-block-time) withdrawal-cooldown)) ;; Refund within 24 hours
       (begin
         (map-set donations tx-sender (- donation amount))
         (var-set total-funds (- (var-get total-funds) amount))
-        (as-contract (stx-transfer? amount tx-sender 'ST000000000000000000002AMW42H))
+        (stx-transfer? amount tx-sender tx-sender)
       )
       (err u110) ;; Error: Refund period expired or invalid amount
     )
@@ -179,7 +179,7 @@
 )
 
 (define-public (log-audit (action-type (string-ascii 32)) (actor principal))
-  (let ((current-time (unwrap-panic (get-block-info? time u0))))
+  (let ((current-time stacks-block-time))
     (ok true)
   )
 )
